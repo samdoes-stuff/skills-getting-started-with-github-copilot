@@ -114,6 +114,26 @@ def signup_for_activity(activity_name: str, email: str):
     # Add student
     activity["participants"].append(normalized_email)
     return {"message": f"Signed up {normalized_email} for {activity_name}"}
+
+
+@app.post("/activities/{activity_name}/unregister")
+def unregister_participant(activity_name: str, email: str):
+    """Unregister a student from an activity"""
+    # Validate activity exists
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    activity = activities[activity_name]
+    normalized_email = email.strip().lower()
+
+    current = [p.strip().lower() for p in activity["participants"]]
+    if normalized_email not in current:
+        raise HTTPException(status_code=404, detail="Participant not found in activity")
+
+    # remove all matching entries (case-insensitive)
+    activity["participants"] = [p for p in activity["participants"] if p.strip().lower() != normalized_email]
+
+    return {"message": f"Unregistered {normalized_email} from {activity_name}"}
 # ...existing code...
 # Frontend JavaScript removed from this Python module; client-side code should live in the static directory.
 # Put the JavaScript into static/index.js and reference it from static/index.html so the Python source remains valid.
