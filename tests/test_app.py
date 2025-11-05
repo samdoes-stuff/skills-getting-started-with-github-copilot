@@ -7,6 +7,11 @@ from fastapi.testclient import TestClient
 from src.app import app, activities
 
 
+def normalize_participants(participants):
+    """Helper function to normalize participant emails for comparison"""
+    return [p.strip().lower() for p in participants]
+
+
 @pytest.fixture
 def client():
     """Create a test client for the FastAPI app"""
@@ -140,7 +145,8 @@ class TestSignupEndpoint:
         # Verify the student was added
         activities_response = client.get("/activities")
         activities_data = activities_response.json()
-        assert "newstudent@mergington.edu" in activities_data["Chess Club"]["participants"]
+        participants = normalize_participants(activities_data["Chess Club"]["participants"])
+        assert "newstudent@mergington.edu" in participants
     
     def test_signup_nonexistent_activity(self, client):
         """Test signup for an activity that doesn't exist"""
@@ -201,7 +207,7 @@ class TestSignupEndpoint:
         # Verify the email was stored in normalized form
         activities_response = client.get("/activities")
         activities_data = activities_response.json()
-        participants = [p.strip().lower() for p in activities_data["Programming Class"]["participants"]]
+        participants = normalize_participants(activities_data["Programming Class"]["participants"])
         assert "newstudent@mergington.edu" in participants
 
 
@@ -222,7 +228,7 @@ class TestUnregisterEndpoint:
         # Verify the student was removed
         activities_response = client.get("/activities")
         activities_data = activities_response.json()
-        participants = [p.lower() for p in activities_data["Chess Club"]["participants"]]
+        participants = normalize_participants(activities_data["Chess Club"]["participants"])
         assert "michael@mergington.edu" not in participants
     
     def test_unregister_nonexistent_activity(self, client):
@@ -254,7 +260,7 @@ class TestUnregisterEndpoint:
         # Verify the student was removed
         activities_response = client.get("/activities")
         activities_data = activities_response.json()
-        participants = [p.lower() for p in activities_data["Chess Club"]["participants"]]
+        participants = normalize_participants(activities_data["Chess Club"]["participants"])
         assert "michael@mergington.edu" not in participants
     
     def test_unregister_with_whitespace(self, client):
@@ -283,7 +289,7 @@ class TestIntegrationScenarios:
         # Verify signup
         activities_response = client.get("/activities")
         activities_data = activities_response.json()
-        participants = [p.lower() for p in activities_data["Programming Class"]["participants"]]
+        participants = normalize_participants(activities_data["Programming Class"]["participants"])
         assert email in participants
         
         # Unregister
@@ -296,7 +302,7 @@ class TestIntegrationScenarios:
         # Verify unregistration
         activities_response = client.get("/activities")
         activities_data = activities_response.json()
-        participants = [p.lower() for p in activities_data["Programming Class"]["participants"]]
+        participants = normalize_participants(activities_data["Programming Class"]["participants"])
         assert email not in participants
     
     def test_multiple_activities_signup(self, client):
@@ -321,8 +327,8 @@ class TestIntegrationScenarios:
         activities_response = client.get("/activities")
         activities_data = activities_response.json()
         
-        chess_participants = [p.lower() for p in activities_data["Chess Club"]["participants"]]
+        chess_participants = normalize_participants(activities_data["Chess Club"]["participants"])
         assert email in chess_participants
         
-        prog_participants = [p.lower() for p in activities_data["Programming Class"]["participants"]]
+        prog_participants = normalize_participants(activities_data["Programming Class"]["participants"])
         assert email in prog_participants
